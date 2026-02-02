@@ -32,10 +32,11 @@ router.post(
       .optional()
       .isIn(['pending', 'in-progress', 'completed'])
       .withMessage('Invalid status'),
-    validate
   ],
+  validate,
   createTask
 );
+
 
 // Update task
 router.patch(

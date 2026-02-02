@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -22,8 +21,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // Check if user is logged in on mount
   useEffect(() => {
-    // Check if user is logged in
     const storedUser = localStorage.getItem('user');
     const accessToken = localStorage.getItem('accessToken');
 
@@ -33,29 +32,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
+
   const login = async (email: string, password: string) => {
-    try {
-      const response = await apiClient.post('/auth/login', { email, password });
-      const { user, accessToken, refreshToken } = response.data;
+  try {
+    const response = await apiClient.post('/auth/login', { email, password });
 
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
+    // Backend now returns { success, data }
+    const { user, accessToken, refreshToken } = response.data.data;
 
-      setUser(user);
-      toast.success('Login successful!');
-      router.push('/dashboard');
-    } catch (error: any) {
-      const message = error.response?.data?.message || 'Login failed';
-      toast.error(message);
-      throw error;
-    }
-  };
+    // Store in localStorage
+    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+
+    // Set user in context
+    setUser(user);
+
+    toast.success('Login successful!');
+
+    // Optional: wait a tick to ensure user state updates
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Redirect after user is set
+    router.push('/dashboard');
+  } catch (error: any) {
+    const message = error.response?.data?.error || 'Login failed';
+    toast.error(message);
+    throw error;
+  }
+};
+
 
   const register = async (email: string, password: string, name: string) => {
     try {
       const response = await apiClient.post('/auth/register', { email, password, name });
-      const { user, accessToken, refreshToken } = response.data;
+
+      const { user, accessToken, refreshToken } = response.data.data;
 
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('accessToken', accessToken);
@@ -65,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.success('Registration successful!');
       router.push('/dashboard');
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Registration failed';
+      const message = error.response?.data?.error || 'Registration failed';
       toast.error(message);
       throw error;
     }

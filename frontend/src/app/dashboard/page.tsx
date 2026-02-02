@@ -15,6 +15,7 @@ import { Task, CreateTaskInput } from '@/types';
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+
   const {
     tasks,
     loading: tasksLoading,
@@ -27,18 +28,23 @@ export default function DashboardPage() {
     setPage,
     setStatusFilter,
     setSearchFilter,
+    refreshTasks,
   } = useTasks();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [searchInput, setSearchInput] = useState('');
 
+  // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
+    } else if (user) {
+      refreshTasks(); // fetch tasks after login
     }
   }, [user, authLoading, router]);
 
+  // Handlers
   const handleCreateTask = async (taskData: CreateTaskInput) => {
     await createTask(taskData);
     setIsModalOpen(false);
@@ -68,11 +74,17 @@ export default function DashboardPage() {
     setEditingTask(null);
   };
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSearchFilter(searchInput);
+    setSearchFilter(searchInput.trim());
   };
 
+  const handleClearSearch = () => {
+    setSearchInput('');
+    setSearchFilter('');
+  };
+
+  // Loading skeleton for auth
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -81,64 +93,55 @@ export default function DashboardPage() {
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  // No user (should rarely happen)
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">My Tasks</h1>
           <p className="text-gray-600">Manage your tasks efficiently</p>
         </div>
 
-        {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <form onSubmit={handleSearch} className="flex-1 flex gap-2">
-              <Input
-                type="text"
-                placeholder="Search tasks..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="flex-1"
-              />
-              <Button type="submit" variant="primary">
-                Search
+        {/* Filters & Search */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center">
+          <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2 w-full md:w-auto">
+            <Input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="flex-1"
+            />
+            <Button type="submit" variant="primary">
+              Search
+            </Button>
+            {filters.search && (
+              <Button type="button" variant="secondary" onClick={handleClearSearch}>
+                Clear
               </Button>
-              {filters.search && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    setSearchInput('');
-                    setSearchFilter('');
-                  }}
-                >
-                  Clear
-                </Button>
-              )}
-            </form>
+            )}
+          </form>
 
-            <div className="flex gap-2">
-              <select
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
-                value={filters.status}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="in-progress">In Progress</option>
-                <option value="completed">Completed</option>
-              </select>
+          <div className="flex gap-2 mt-2 md:mt-0">
+            <select
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+              value={filters.status}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
 
-              <Button variant="primary" onClick={() => setIsModalOpen(true)}>
-                + New Task
-              </Button>
-            </div>
+            <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+              + New Task
+            </Button>
           </div>
         </div>
 
@@ -188,15 +191,20 @@ export default function DashboardPage() {
               ))}
             </div>
 
-            <Pagination
-              currentPage={pagination.page}
-              totalPages={pagination.totalPages}
-              onPageChange={setPage}
-            />
+            {pagination.totalPages > 1 && (
+              <div className="mt-6">
+                <Pagination
+                  currentPage={pagination.page}
+                  totalPages={pagination.totalPages}
+                  onPageChange={setPage}
+                />
+              </div>
+            )}
           </>
         )}
       </main>
 
+      {/* Task Modal */}
       <TaskModal
         isOpen={isModalOpen}
         onClose={handleModalClose}
