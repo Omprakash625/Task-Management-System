@@ -39,24 +39,25 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSubmit, task }
   }, [task, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
+  e.preventDefault();
+  setErrors({});
 
-    if (!formData.title.trim()) {
-      setErrors({ title: 'Title is required' });
-      return;
-    }
+  if (!formData.title.trim()) {
+    setErrors({ title: 'Title is required' });
+    return;
+  }
 
-    try {
-      setLoading(true);
-      await onSubmit(formData);
-      onClose();
-    } catch (error) {
-      console.error('Submit error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    await onSubmit(formData);
+    onClose();
+  } catch (error) {
+    console.error('Submit error:', error);
+    // Error is already handled by toast in the hook
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (!isOpen) return null;
 

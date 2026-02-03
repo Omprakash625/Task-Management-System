@@ -10,15 +10,32 @@ const apiClient = axios.create({
 });
 
 // Request interceptor to add auth token
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Handle network errors
+    if (!error.response) {
+      return Promise.reject(new Error('Network error. Please check your connection.'));
     }
-    return config;
-  },
-  (error) => {
+
+    // If error is 401 and we haven't already tried to refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) {
+          throw new Error('No refresh token');
+        }
+
+        // ...existing code...
+      } catch (refreshError) {
+        // ...existing code...
+      }
+    }
+
     return Promise.reject(error);
   }
 );

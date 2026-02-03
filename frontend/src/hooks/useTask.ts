@@ -1,20 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import apiClient from '@/lib/api';
 import { Task, TasksResponse, CreateTaskInput, UpdateTaskInput } from '@/types';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import axios from 'axios';
 
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
 
 export const useTasks = () => {
-  // Tasks data
-  const { user } = useAuth();
+  const { token, user } = useAuth(); // Get token from auth context
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Pagination defaults
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 9,
     total: 0,
     totalPages: 1,
   });
@@ -25,63 +27,95 @@ export const useTasks = () => {
     search: '',
   });
 
+  // Create axios instance with auth token
+  const getAxiosConfig = useCallback(() => {
+    const config: any = {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+    
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return config;
+  }, [token]);
+
   // Fetch tasks from backend
-const fetchTasks = async (page = 1, status = '', search = '') => {
-  try {
+  const fetchTasks = useCallback(async (page = 1, status = '', search = '') => {
+    // Wait for token to be available
+    if (!token || !user) {
+      return;
+    }
+
     setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pagination.limit),
+        ...(status && { status }),
+        ...(search && { search }),
+      });
 
-    // Wait for user before fetching (optional if called from useEffect)
-    if (!user) return;
+      const response = await axios.get<any>(
+        `${API_BASE_URL}/tasks?${params}`,
+        getAxiosConfig()
+      );
 
-    // Build query params
-    const params: any = { page, limit: 10 };
-    if (status) params.status = status;
-    if (search) params.search = search;
+      const { tasks: fetchedTasks = [], pagination: fetchedPagination = { page: 1, limit: 10, total: 0, totalPages: 1 } } =
+        response.data?.data || response.data || {};
 
-    // Make API request
-    const response = await apiClient.get('/tasks', { params });
+      setTasks(fetchedTasks);
+      setPagination(fetchedPagination);
+    } catch (error: any) {
+      toast.error('Failed to fetch tasks');
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, user, pagination.limit, getAxiosConfig]);
 
-    // Extract tasks and pagination safely
-    const { tasks: fetchedTasks = [], pagination: fetchedPagination = { page: 1, limit: 10, total: 0, totalPages: 1 } } =
-      response.data?.data || {};
-
-    // Update state
-    setTasks(fetchedTasks);
-    setPagination(fetchedPagination);
-  } catch (error: any) {
-    toast.error('Failed to fetch tasks');
-    console.error('Fetch tasks error:', error);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  useEffect(() => {
+    if (user && token) {
+      fetchTasks(pagination.page, filters.status, filters.search);
+    } else {
+      setTasks([]);
+      setLoading(false);
+    }
+  }, [user, token, pagination.page, filters.status, filters.search]);
 
   // Create task
   const createTask = async (taskData: CreateTaskInput) => {
-  try {
-    const response = await apiClient.post('/tasks', taskData);
-    toast.success('Task created successfully!');
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/tasks`,
+        taskData,
+        getAxiosConfig()
+      );
+      toast.success('Task created successfully!');
 
-    // After creating, fetch first page
-    setPagination((prev) => ({ ...prev, page: 1 }));
-    await fetchTasks(1, filters.status, filters.search);
+      setPagination((prev) => ({ ...prev, page: 1 }));
+      await fetchTasks(1, filters.status, filters.search);
 
-    return response.data.data; // contains the created task
-  } catch (error: any) {
-    toast.error('Failed to create task');
-    throw error;
-  }
-};
-
+      return response.data.data;
+    } catch (error: any) {
+      toast.error('Failed to create task');
+      throw error;
+    }
+  };
 
   // Update task
   const updateTask = async (id: string, taskData: UpdateTaskInput) => {
     try {
-      const response = await apiClient.patch(`/tasks/${id}`, taskData);
+      const response = await axios.patch(
+        `${API_BASE_URL}/tasks/${id}`,
+        taskData,
+        getAxiosConfig()
+      );
       toast.success('Task updated successfully!');
       await fetchTasks(pagination.page, filters.status, filters.search);
-      return response.data.data.task;
+      return response.data.data;
     } catch (error: any) {
       toast.error('Failed to update task');
       throw error;
@@ -91,7 +125,10 @@ const fetchTasks = async (page = 1, status = '', search = '') => {
   // Delete task
   const deleteTask = async (id: string) => {
     try {
-      await apiClient.delete(`/tasks/${id}`);
+      await axios.delete(
+        `${API_BASE_URL}/tasks/${id}`,
+        getAxiosConfig()
+      );
       toast.success('Task deleted successfully!');
       await fetchTasks(pagination.page, filters.status, filters.search);
     } catch (error: any) {
@@ -103,10 +140,14 @@ const fetchTasks = async (page = 1, status = '', search = '') => {
   // Toggle task status
   const toggleTaskStatus = async (id: string) => {
     try {
-      const response = await apiClient.post(`/tasks/${id}/toggle`);
+      const response = await axios.post(
+        `${API_BASE_URL}/tasks/${id}/toggle`,
+        {},
+        getAxiosConfig()
+      );
       toast.success('Task status updated!');
       await fetchTasks(pagination.page, filters.status, filters.search);
-      return response.data.data.task;
+      return response.data.data;
     } catch (error: any) {
       toast.error('Failed to toggle task status');
       throw error;
@@ -116,17 +157,24 @@ const fetchTasks = async (page = 1, status = '', search = '') => {
   // Pagination and filter setters
   const setPage = (page: number) => {
     setPagination((prev) => ({ ...prev, page }));
+    fetchTasks(page, filters.status, filters.search);
   };
 
   const setStatusFilter = (status: string) => {
     setFilters((prev) => ({ ...prev, status }));
     setPagination((prev) => ({ ...prev, page: 1 }));
+    fetchTasks(1, status, filters.search);
   };
 
   const setSearchFilter = (search: string) => {
     setFilters((prev) => ({ ...prev, search }));
     setPagination((prev) => ({ ...prev, page: 1 }));
+    fetchTasks(1, filters.status, search);
   };
+
+  const refreshTasks = useCallback(() => {
+    fetchTasks(pagination.page, filters.status, filters.search);
+  }, [fetchTasks, pagination.page, filters.status, filters.search]);
 
   return {
     tasks,
@@ -140,6 +188,6 @@ const fetchTasks = async (page = 1, status = '', search = '') => {
     setPage,
     setStatusFilter,
     setSearchFilter,
-    refreshTasks: () => fetchTasks(pagination.page, filters.status, filters.search),
+    refreshTasks,
   };
 };

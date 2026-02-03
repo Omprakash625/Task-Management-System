@@ -25,21 +25,26 @@ export default function LoginPage() {
     e.preventDefault();
     setErrors({});
 
+    const newErrors: { [key: string]: string } = {};
+
     if (!email) {
-      setErrors((prev) => ({ ...prev, email: 'Email is required' }));
-      return;
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = 'Please enter a valid email';
     }
 
     if (!password) {
-      setErrors((prev) => ({ ...prev, password: 'Password is required' }));
+      newErrors.password = 'Password is required';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
     try {
       setLoading(true);
       await login(email, password);
-    } catch (error) {
-      console.error('Login error:', error);
     } finally {
       setLoading(false);
     }
@@ -60,11 +65,12 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit} autoComplete="on">
           <div className="space-y-4">
             <Input
               label="Email address"
               type="email"
+              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               error={errors.email}
@@ -74,10 +80,12 @@ export default function LoginPage() {
             <Input
               label="Password"
               type="password"
+              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               error={errors.password}
               placeholder="Enter your password"
+              autoComplete="current-password"
             />
           </div>
 

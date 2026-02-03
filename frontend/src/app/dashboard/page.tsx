@@ -1,16 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { useTasks } from '@/hooks/useTask';
-import Navbar from '@/components/Navbar';
-import TaskCard from '@/components/TaskCard';
-import TaskModal from '@/components/TaskModal';
-import Pagination from '@/components/Pagination';
-import Button from '@/components/Button';
-import Input from '@/components/Input';
-import { Task, CreateTaskInput } from '@/types';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTasks } from "@/hooks/useTask";
+import Navbar from "@/components/Navbar";
+import TaskCard from "@/components/TaskCard";
+import TaskModal from "@/components/TaskModal";
+import ConfirmModal from "@/components/ConfirmModal";
+import Pagination from "@/components/Pagination";
+import Button from "@/components/Button";
+import Input from "@/components/Input";
+import { Task, CreateTaskInput } from "@/types";
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
@@ -33,16 +34,25 @@ export default function DashboardPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [searchInput, setSearchInput] = useState('');
+  const [searchInput, setSearchInput] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<{
+    isOpen: boolean;
+    taskId: string | null;
+  }>({
+    isOpen: false,
+    taskId: null,
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/login');
-    } else if (user) {
-      refreshTasks(); // fetch tasks after login
+      router.push("/login");
+    } else if (!authLoading && user) {
+      // Only refresh tasks when auth is fully loaded and user exists
+      refreshTasks();
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, refreshTasks]);
 
   // Handlers
   const handleCreateTask = async (taskData: CreateTaskInput) => {
@@ -64,9 +74,23 @@ export default function DashboardPage() {
   };
 
   const handleDeleteClick = async (id: string) => {
-    if (confirm('Are you sure you want to delete this task?')) {
-      await deleteTask(id);
+    setConfirmDelete({ isOpen: true, taskId: id });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete.taskId) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteTask(confirmDelete.taskId);
+      setConfirmDelete({ isOpen: false, taskId: null });
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmDelete({ isOpen: false, taskId: null });
   };
 
   const handleModalClose = () => {
@@ -80,8 +104,8 @@ export default function DashboardPage() {
   };
 
   const handleClearSearch = () => {
-    setSearchInput('');
-    setSearchFilter('');
+    setSearchInput("");
+    setSearchFilter("");
   };
 
   // Loading skeleton for auth
@@ -108,8 +132,11 @@ export default function DashboardPage() {
         </div>
 
         {/* Filters & Search */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center">
-          <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2 w-full md:w-auto">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+          <form
+            onSubmit={handleSearchSubmit}
+            className="flex-1 flex gap-2 w-full md:w-auto"
+          >
             <Input
               type="text"
               placeholder="Search tasks..."
@@ -121,13 +148,17 @@ export default function DashboardPage() {
               Search
             </Button>
             {filters.search && (
-              <Button type="button" variant="secondary" onClick={handleClearSearch}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleClearSearch}
+              >
                 Clear
               </Button>
             )}
           </form>
 
-          <div className="flex gap-2 mt-2 md:mt-0">
+          <div className="flex gap-2 mt-2 md:mt-0 shrink-0 w-full md:w-auto">
             <select
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
               value={filters.status}
@@ -139,9 +170,13 @@ export default function DashboardPage() {
               <option value="completed">Completed</option>
             </select>
 
-            <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 whitespace-nowrap font-medium"
+            >
               + New Task
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -165,11 +200,13 @@ export default function DashboardPage() {
                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
               />
             </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No tasks found
+            </h3>
             <p className="text-gray-500 mb-4">
               {filters.search || filters.status
-                ? 'Try adjusting your filters'
-                : 'Get started by creating your first task'}
+                ? "Try adjusting your filters"
+                : "Get started by creating your first task"}
             </p>
             {!filters.search && !filters.status && (
               <Button variant="primary" onClick={() => setIsModalOpen(true)}>
@@ -210,6 +247,19 @@ export default function DashboardPage() {
         onClose={handleModalClose}
         onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
         task={editingTask}
+      />
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={confirmDelete.isOpen}
+        title="Delete Task"
+        message="Are you sure you want to delete this task? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDangerous={true}
+        isLoading={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
       />
     </div>
   );
