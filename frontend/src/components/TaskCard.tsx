@@ -29,10 +29,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleSta
   const handleStatusToggle = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    const currentIndex = statusOptions.indexOf(task.status);
-    const nextStatus = statusOptions[(currentIndex + 1) % statusOptions.length];
-    onToggleStatus(task.id, nextStatus);
+    onToggleStatus(task.id);
   };
 
   return (
