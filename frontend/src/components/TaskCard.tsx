@@ -49,18 +49,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleSta
         Created: {new Date(task.createdAt).toLocaleDateString()}
       </div>
 
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-sm font-medium text-gray-500">Status</span>
-        <button
-          onClick={handleStatusToggle}
-          onTouchEnd={handleStatusToggle}
-          className="px-3 py-1 rounded-full text-sm font-medium cursor-pointer hover:opacity-80 transition-opacity active:scale-95"
-          type="button"
-        >
-          <span className={`text-xs font-semibold ${statusColors[task.status]}`}>
-            {statusLabels[task.status]}
-          </span>
-        </button>
+      <div className="text-xs text-gray-500 mb-4">
+        Updated: {new Date(task.updatedAt).toLocaleDateString()}
       </div>
 
       <div className="flex gap-2 flex-wrap">
