@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import axios from 'axios';
 
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = apiClient.defaults.baseURL || '';
 
 export const useTasks = () => {
   const { token, user } = useAuth(); // Get token from auth context
