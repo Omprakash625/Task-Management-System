@@ -143,6 +143,8 @@ export default function DashboardPage() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="flex-1"
+              autoComplete="off"
+              autoFocus={false}
             />
             <Button type="submit" variant="primary">
               Search

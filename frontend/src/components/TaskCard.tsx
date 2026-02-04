@@ -24,6 +24,17 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleSta
     completed: 'Completed',
   };
 
+  const statusOptions = ['pending', 'in-progress', 'completed'];
+
+  const handleStatusToggle = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const currentIndex = statusOptions.indexOf(task.status);
+    const nextStatus = statusOptions[(currentIndex + 1) % statusOptions.length];
+    onToggleStatus(task.id, nextStatus);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
       <div className="flex items-start justify-between mb-3">
@@ -39,6 +50,20 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleSta
 
       <div className="text-xs text-gray-500 mb-4">
         Created: {new Date(task.createdAt).toLocaleDateString()}
+      </div>
+
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-sm font-medium text-gray-500">Status</span>
+        <button
+          onClick={handleStatusToggle}
+          onTouchEnd={handleStatusToggle}
+          className="px-3 py-1 rounded-full text-sm font-medium cursor-pointer hover:opacity-80 transition-opacity active:scale-95"
+          type="button"
+        >
+          <span className={`text-xs font-semibold ${statusColors[task.status]}`}>
+            {statusLabels[task.status]}
+          </span>
+        </button>
       </div>
 
       <div className="flex gap-2 flex-wrap">
