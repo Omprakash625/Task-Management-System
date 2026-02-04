@@ -57,12 +57,7 @@ export default function LoginPage() {
           <h2 className="text-center text-3xl font-bold text-gray-900">
             Sign in to your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link href="/register" className="font-medium text-primary-600 hover:text-primary-500">
-              create a new account
-            </Link>
-          </p>
+          
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit} autoComplete="on">
@@ -92,6 +87,12 @@ export default function LoginPage() {
           <Button type="submit" variant="primary" fullWidth loading={loading}>
             Sign in
           </Button>
+
+          <p className="mt-1 text-center text-sm text-gray-600">
+            <Link href="/register" className="font-medium text-lg text-primary-600 hover:text-primary-500 hover:underline transition">
+              Create a new account
+            </Link>
+          </p>
         </form>
       </div>
     </div>

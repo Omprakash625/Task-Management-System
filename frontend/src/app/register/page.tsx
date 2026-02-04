@@ -71,12 +71,7 @@ export default function RegisterPage() {
           <h2 className="text-center text-3xl font-bold text-gray-900">
             Create your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link href="/login" className="font-medium text-primary-600 hover:text-primary-500">
-              Sign in
-            </Link>
-          </p>
+          
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -121,6 +116,13 @@ export default function RegisterPage() {
           <Button type="submit" variant="primary" fullWidth loading={loading}>
             Create Account
           </Button>
+
+          <p className="mt-2 text-center text-base text-gray-600">
+            Already have an account?{' '}
+            <Link href="/login" className="font-medium text-lg text-primary-600 hover:text-primary-500 hover:underline">
+              Sign in
+            </Link>
+          </p>
         </form>
       </div>
     </div>
