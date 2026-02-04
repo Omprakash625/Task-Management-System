@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Task } from '@/types';
-import Button from './Button';
+import React from "react";
+import { Task } from "@/types";
+import Button from "./Button";
 
 interface TaskCardProps {
   task: Task;
@@ -11,20 +11,25 @@ interface TaskCardProps {
   onToggleStatus: (id: string) => void;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleStatus }) => {
+const TaskCard: React.FC<TaskCardProps> = ({
+  task,
+  onEdit,
+  onDelete,
+  onToggleStatus,
+}) => {
   const statusColors = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    'in-progress': 'bg-blue-100 text-blue-800',
-    completed: 'bg-green-100 text-green-800',
+    pending: "bg-yellow-100 text-yellow-800",
+    "in-progress": "bg-blue-100 text-blue-800",
+    completed: "bg-green-100 text-green-800",
   };
 
   const statusLabels = {
-    pending: 'Pending',
-    'in-progress': 'In Progress',
-    completed: 'Completed',
+    pending: "Pending",
+    "in-progress": "In Progress",
+    completed: "Completed",
   };
 
-  const statusOptions = ['pending', 'in-progress', 'completed'];
+  const statusOptions = ["pending", "in-progress", "completed"];
 
   const handleStatusToggle = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
@@ -36,7 +41,9 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleSta
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
       <div className="flex items-start justify-between mb-3">
         <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[task.status]}`}>
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[task.status]}`}
+        >
           {statusLabels[task.status]}
         </span>
       </div>
@@ -49,7 +56,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleSta
         Created: {new Date(task.createdAt).toLocaleDateString()}
       </div>
 
-      {new Date(task.updatedAt).getTime() > new Date(task.createdAt).getTime() && (
+      {new Date(task.updatedAt).getTime() >
+        new Date(task.createdAt).getTime() && (
         <div className="text-xs text-gray-500 mb-4">
           Updated: {new Date(task.updatedAt).toLocaleDateString()}
         </div>
@@ -58,10 +66,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleSta
       <div className="flex gap-2 flex-wrap">
         <Button
           variant="primary"
-          onClick={() => onToggleStatus(task.id)}
+          onClick={handleStatusToggle}
+          onTouchStart={handleStatusToggle}
           className="text-sm"
         >
-          {task.status === 'completed' ? 'Mark Pending' : 'Mark Complete'}
+          {task.status === "completed" ? "Mark Pending" : "Mark Complete"}
         </Button>
         <Button
           variant="secondary"
