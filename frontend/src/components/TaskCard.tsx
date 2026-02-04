@@ -49,9 +49,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onToggleSta
         Created: {new Date(task.createdAt).toLocaleDateString()}
       </div>
 
-      <div className="text-xs text-gray-500 mb-4">
-        Updated: {new Date(task.updatedAt).toLocaleDateString()}
-      </div>
+      {new Date(task.updatedAt).getTime() > new Date(task.createdAt).getTime() && (
+        <div className="text-xs text-gray-500 mb-4">
+          Updated: {new Date(task.updatedAt).toLocaleDateString()}
+        </div>
+      )}
 
       <div className="flex gap-2 flex-wrap">
         <Button
